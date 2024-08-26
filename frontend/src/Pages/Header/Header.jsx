@@ -41,7 +41,7 @@ function Header() {
                 }
             </ul>
             </div>
-            <Link to='/' className="btn btn-ghost text-xl">AI Audio Generator</Link>
+            <h1 className="btn btn-ghost text-xl">AI Audio Generator</h1>
         </div>
         <div className="navbar-center hidden lg:flex">
             <ul className="menu menu-horizontal ">
