@@ -103,8 +103,8 @@ To run this project, you will need Docker and Docker Compose installed on your m
 
 #### 1. Clone the Repository 
 ```bash
-git clone https://github.com/Saif-000001/Pdf_To_Audio_Using_TTS_Models.git
-cd Pdf_To_Audio_Using_TTS_Models
+https://github.com/Saif-000001/AI-Audio-Generator.git
+cd AI-Audio-Generator
 ```
 Open your project in Visual Studio Code, then open a new terminal. In the terminal, navigate to the frontend directory using the command `cd frontend`, and then install the project dependencies by running `npm install`."
 
