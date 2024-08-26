@@ -1,0 +1,31 @@
+# Node modules and package lock files
+node_modules
+package-lock.json
+
+# Build output
+build
+
+# Log files
+*.log
+
+# IDE and editor folders
+.vscode
+.idea
+*.swp
+*.swo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+
+
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
