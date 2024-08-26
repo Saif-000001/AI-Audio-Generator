@@ -106,7 +106,7 @@ To run this project, you will need Docker and Docker Compose installed on your m
 https://github.com/Saif-000001/AI-Audio-Generator.git
 cd AI-Audio-Generator
 ```
-Open your project in Visual Studio Code, then open a new terminal. In the terminal, navigate to the frontend directory using the command `cd frontend`, and then install the project dependencies by running `npm install`."
+Open your project in Visual Studio Code, then open a new terminal. In the terminal, navigate to the frontend directory using the command `cd frontend`, and then install the project dependencies by running `npm install`. Instructs the user to create a `.env.local` file and provides the exact Firebase configuration values as placeholders. The user is directed to replace them with their actual Firebase project configuration details from the Firebase Console.
 
 #### 2. Build and Run the Docker Containers
 
