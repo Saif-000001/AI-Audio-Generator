@@ -95,7 +95,18 @@ AI-Audio-Generator/
 ├── README.md
 └── tailwind.config.js
 ```
-Open your project in Visual Studio Code, then open a new terminal. In the terminal, navigate to the frontend directory using the command `cd frontend`, and then install the project dependencies by running `npm install`. Instructs the user to create a `.env.local` file and provides the exact Firebase configuration values as placeholders. The user is directed to replace them with their actual Firebase project configuration details from the Firebase Console.
+## Requirements
+To run this project, you will need Docker and Docker Compose installed on your machine. Installation guides for Docker can be found [here](https://docs.docker.com/get-docker/) and for Docker Compose [here](https://docs.docker.com/compose/install/).
+
+
+## Running the Application
+
+#### 1. Clone the Repository 
+```bash
+git clone https://github.com/Saif-000001/Pdf_To_Audio_Using_TTS_Models.git
+cd Pdf_To_Audio_Using_TTS_Models
+```
+Open your project in Visual Studio Code, then open a new terminal. In the terminal, navigate to the frontend directory using the command `cd frontend`, and then install the project dependencies by running `npm install`."
 
 #### 2. Build and Run the Docker Containers
 
