@@ -17,6 +17,7 @@ For the Text-to-Speech functionality, we leverage the powerful TTS engine availa
 ## Project Structure
 
 ```plaintext
+```plaintext
 AI-Audio-Generator/
 │
 ├── frontend/
@@ -32,14 +33,17 @@ AI-Audio-Generator/
 │   │   │   └── Root.jsx
 │   │   ├── Pages/
 │   │   │   ├── Header/
-│   │   │   ├── Share/
-│   │   │   ├── Dashboard/
-│   │   │   │   ├── Dashboard.jsx
-│   │   │   │   ├── DeleteTest.jsx
-│   │   │   │   └── Store.jsx
-│   │   │   ├── Home/
-│   │   │   │   └── Home.jsx
-│   │   │   └── Login/
+|   |   |   |   ├── Header.jsx
+|   │   │   │   ├── Share/
+|   |   │   │   │   ├── Dashboard/
+|   |   │   │   │   │   ├── Dashboard.jsx
+|   |   │   │   │   │   ├── DeleteTest.jsx
+|   |   │   │   │   │   └── Store.jsx
+|   |   │   │   │   ├── Home/
+|   |   │   │   │   │   └── Home.jsx
+|   |   |   ├── Register/
+|   |   |   |     └── Register.jsx
+|   │   │   └── Login/
 │   │   │       └── Login.jsx
 │   │   ├── Providers/
 │   │   │   └── AuthProvider.jsx
@@ -90,19 +94,6 @@ AI-Audio-Generator/
 ├── postcss.config.js
 ├── README.md
 └── tailwind.config.js
-
-
-## Requirements
-- **Docker**: Containerization platform for running the application. Installation guide can be found [here](https://docs.docker.com/get-docker/).
-- **Docker Compose**: Tool for defining and running multi-container Docker applications. Installation guide can be found [here](https://docs.docker.com/compose/install/).
-- **Firebase Account**: Create a Firebase project in the [Firebase Console](https://console.firebase.google.com/).
-
-## Running the Application
-
-#### 1. Clone the Repository 
-```bash
-git clone https://github.com/Saif-000001/AI-Audio-Generator.git
-cd AI-Audio-Generator
 ```
 Open your project in Visual Studio Code, then open a new terminal. In the terminal, navigate to the frontend directory using the command `cd frontend`, and then install the project dependencies by running `npm install`. Instructs the user to create a `.env.local` file and provides the exact Firebase configuration values as placeholders. The user is directed to replace them with their actual Firebase project configuration details from the Firebase Console.
 
