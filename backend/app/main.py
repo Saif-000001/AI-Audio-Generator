@@ -1,4 +1,6 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -92,9 +94,14 @@ lang_to_model = {
     'be': 'tts_models/be/common-voice/glow-tts'
 }
 
+thread_pool = ThreadPoolExecutor()
+
+def run_in_thread_pool(fn, *args, **kwargs):
+    return asyncio.get_event_loop().run_in_executor(thread_pool, partial(fn, *args, **kwargs))
+
 async def detect_language(text):
     try:
-        return detect(text)
+        return await run_in_thread_pool(detect, text)
     except:
         return 'en'  # Default to English if detection fails
 
@@ -102,13 +109,13 @@ async def get_ocr_reader(lang):
     if lang not in supported_languages:
         logger.warning(f"Language '{lang}' not supported. Defaulting to English.")
         lang = 'en'
-    return await asyncio.to_thread(easyocr.Reader, [lang, 'en'] if lang != 'en' else ['en'])
+    return await run_in_thread_pool(easyocr.Reader, [lang, 'en'] if lang != 'en' else ['en'])
 
 async def process_image(img_data, reader):
     try:
-        img = Image.open(io.BytesIO(img_data))
+        img = await run_in_thread_pool(Image.open, io.BytesIO(img_data))
         img_np = np.array(img)
-        ocr_result = await asyncio.to_thread(reader.readtext, img_np)
+        ocr_result = await run_in_thread_pool(reader.readtext, img_np)
         return ' '.join([text for _, text, _ in ocr_result])
     except Exception as e:
         logger.error(f"Error processing image: {e}")
@@ -116,12 +123,12 @@ async def process_image(img_data, reader):
 
 async def process_page(page, reader):
     try:
-        text = page.get_text()
+        text = await run_in_thread_pool(page.get_text)
         image_texts = []
 
         for img in page.get_images():
             xref = img[0]
-            base_image = page.parent.extract_image(xref)
+            base_image = await run_in_thread_pool(page.parent.extract_image, xref)
             image_text = await process_image(base_image["image"], reader)
             image_texts.append(image_text)
 
@@ -132,14 +139,14 @@ async def process_page(page, reader):
 
 async def pdf_to_text(pdf_path):
     try:
-        doc = fitz.open(pdf_path)
-        first_page_text = doc[0].get_text()
+        doc = await run_in_thread_pool(fitz.open, pdf_path)
+        first_page_text = await run_in_thread_pool(doc[0].get_text)
         lang = await detect_language(first_page_text)
         reader = await get_ocr_reader(lang)
         
         tasks = [process_page(page, reader) for page in doc]
         results = await asyncio.gather(*tasks)
-        doc.close()
+        await run_in_thread_pool(doc.close)
         return ' '.join(results), lang
     except Exception as e:
         logger.error(f"Error processing PDF: {e}")
@@ -153,51 +160,39 @@ async def text_to_audio(text, lang, speaker=None, max_retries=3, retry_delay=5):
             tts = TTS(model_name=model_name).to(device)
             output_file = AUDIO_DIR / f"Audio_{lang}_{uuid.uuid4()}.wav"
             
-            await asyncio.to_thread(tts.tts_to_file, text=text, file_path=str(output_file), speaker=speaker)
+            await run_in_thread_pool(tts.tts_to_file, text=text, file_path=(output_file), speaker=speaker)
             return output_file
-        except requests.exceptions.ChunkedEncodingError as e:
-            logger.warning(f"Attempt {attempt + 1} failed: ChunkedEncodingError - {e}")
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1} failed: {e}")
             if attempt < max_retries - 1:
                 await asyncio.sleep(retry_delay)
             else:
-                logger.error(f"Failed to download model after {max_retries} attempts")
+                logger.error(f"Failed to generate audio after {max_retries} attempts")
                 raise
-        except RequestException as e:
-            logger.error(f"Network error occurred: {e}")
-            raise
-        except Exception as e:
-            logger.error(f"Unexpected error occurred: {e}")
-            raise
 
 @app.post("/convert/", response_model=schemas.Conversion, status_code=201)
 async def convert_pdf_to_audio(file: UploadFile = File(...), db: Session = Depends(get_db)):
     file_path = UPLOAD_DIR / file.filename
     content = await file.read()
-    await asyncio.to_thread(lambda: file_path.write_bytes(content))
-
-    full_text, lang = await pdf_to_text(str(file_path))
+    await run_in_thread_pool(file_path.write_bytes, content)
 
     try:
+        full_text, lang = await pdf_to_text(str(file_path))
         audio_file_path = await text_to_audio(full_text, lang)
-    except ValueError as ve:
-        if "No speakers available" in str(ve):
-            audio_file_path = await text_to_audio(full_text, lang, speaker="speaker_0")
-        else:
-            raise
     except Exception as e:
-        logger.error(f"Error in text-to-audio conversion: {e}")
-        raise HTTPException(status_code=500, detail="Error in text-to-audio conversion")
+        logger.error(f"Error in conversion process: {e}")
+        raise HTTPException(status_code=500, detail="Error in conversion process")
 
-    conversion = await asyncio.to_thread(crud.create_conversion, db, file.filename, lang, str(audio_file_path))
+    conversion = await run_in_thread_pool(crud.create_conversion, db, file.filename, lang, str(audio_file_path))
     return conversion
 
 @app.get("/conversions/", response_model=List[schemas.Conversion])
 async def read_conversions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return await asyncio.to_thread(crud.get_conversions, db, skip=skip, limit=limit)
+    return await run_in_thread_pool(crud.get_conversions, db, skip=skip, limit=limit)
 
 @app.get("/download/{conversion_id}")
 async def download_file(conversion_id: int, db: Session = Depends(get_db)):
-    conversion = await asyncio.to_thread(crud.get_conversion, db, conversion_id)
+    conversion = await run_in_thread_pool(crud.get_conversion, db, conversion_id)
     if not conversion:
         raise HTTPException(status_code=404, detail="Conversion not found")
     
@@ -205,21 +200,26 @@ async def download_file(conversion_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Conversion record is missing audio file path")
     
     file_path = Path(conversion.audio_file_path)
-    if not await asyncio.to_thread(file_path.exists):
+    if not await run_in_thread_pool(file_path.exists):
         raise HTTPException(status_code=404, detail="Audio file not found")
     
     return FileResponse(file_path, media_type="audio/wav", filename=file_path.name)
 
 @app.delete("/conversions/{conversion_id}", status_code=204)
 async def delete_conversion(conversion_id: int, db: Session = Depends(get_db)):
-    conversion = await asyncio.to_thread(crud.get_conversion, db, conversion_id)
+    conversion = await run_in_thread_pool(crud.get_conversion, db, conversion_id)
     if not conversion:
         raise HTTPException(status_code=404, detail=f"Conversion with id {conversion_id} not found")
     
     file_path = Path(conversion.audio_file_path)
-    if await asyncio.to_thread(file_path.exists):
-        await asyncio.to_thread(file_path.unlink)
+    if await run_in_thread_pool(file_path.exists):
+        await run_in_thread_pool(file_path.unlink)
     
-    await asyncio.to_thread(crud.delete_conversion, db, conversion_id)
+    await run_in_thread_pool(crud.delete_conversion, db, conversion_id)
     
     return {"message": "Conversion deleted successfully"}
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global thread_pool
+    thread_pool.shutdown()
